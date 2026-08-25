@@ -9,7 +9,11 @@ function lowLevelWriteScalarString(filename, path, strValue)
     lcpl = H5P.create('H5P_LINK_CREATE');
     H5P.set_create_intermediate_group(lcpl, 1);
     did = H5D.create(fid, path, tid, sid, lcpl, 'H5P_DEFAULT', 'H5P_DEFAULT');
-    H5D.write(did, tid, 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', char(strValue));
+    % Wrapped in a cell so H5D.write treats it as one vlen-string element
+    % matching the scalar dataspace, rather than one element per char
+    % (the bare-char form happens to work on newer MATLAB but not on
+    % R2019b, where it errors with an element-count mismatch).
+    H5D.write(did, tid, 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', {char(strValue)});
     H5D.close(did);
     H5S.close(sid);
     H5T.close(tid);

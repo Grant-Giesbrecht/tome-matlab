@@ -10,9 +10,24 @@ independent implementation of the same on-disk format for MATLAB and
 GNU Octave, verified to round-trip against the Python reference reader
 and writer.
 
-Tested against MATLAB R2026a and GNU Octave 11.3 (with the
-[hdf5oct](https://github.com/gapost/hdf5oct) package) on macOS
-(Apple Silicon).
+Tested against MATLAB R2026a, MATLAB R2019b, and GNU Octave 11.3 (with
+the [hdf5oct](https://github.com/gapost/hdf5oct) package) on macOS
+(Apple Silicon), including the full interop matrix against the Python
+reference implementation on each.
+
+**MATLAB compatibility floor.** The MATLAB-side writer avoids
+`h5create`/`h5write`'s `'Datatype', 'string'` option (added around
+R2020b) and `arguments` blocks (R2019b+), using the low-level
+`H5F`/`H5D`/`H5T`/`H5S`/`H5G`/`H5O`/`H5A`/`H5P` API instead wherever the
+high-level functions are insufficient — including for every
+`__pytype__`/`dtype` attribute write, since R2019b's `h5writeatt`
+defaults to a *fixed-length ASCII* string attribute, which h5py reads
+back as raw `bytes` rather than `str` and silently breaks every
+type-tag comparison downstream (R2026a's `h5writeatt` already defaults
+to the variable-length UTF-8 encoding h5py expects; this only bit
+R2019b). Believed to work back to roughly R2011a, when the low-level
+interface was introduced, but only R2019b and R2026a have actually been
+tested — if you hit an issue on another release, please report it.
 
 ## Installation
 
@@ -105,6 +120,15 @@ implementation (or a plain HDF5 file) stays readable.
   produces a 1-element 1-D dataset), so MATLAB scalars — and complex
   data, which MATLAB's high-level interface doesn't support at all —
   are written via the low-level `H5S`/`H5T`/`H5D` API instead.
+- **String lists** are likewise written via the low-level API on
+  MATLAB (a true rank-1 vlen-UTF-8 dataset) rather than
+  `h5create(..., 'Datatype', 'string')`, since that high-level option
+  isn't available on older MATLAB releases (see the compatibility note
+  above). Octave has no low-level HDF5 bindings at all (`hdf5oct` only
+  wraps the high-level functions), so it always uses the high-level
+  path — Octave's is the only place a plain vector datatype can't
+  reliably become a true rank-1 dataset (see the shape limitation
+  below), and that applies here too.
 - **Complex numbers** are stored as the HDF5 compound type `{double r;
   double i;}`, matching h5py's native complex128 mapping, using
   Octave's `Datatype = 'double complex'` support or MATLAB's low-level
@@ -117,6 +141,11 @@ implementation (or a plain HDF5 file) stays readable.
   returns that as a cell array of `'TRUE'`/`'FALSE'` strings rather
   than decoding it, so the reader detects and decodes it explicitly
   (Octave's `h5read` already decodes it to `logical` natively).
+- **Type-tag attributes** (`__pytype__`, `dtype`) are written via the
+  low-level `H5A` API on MATLAB rather than `h5writeatt`, for the
+  R2019b encoding reason noted in the compatibility floor above.
+  `H5O.open` accepts a group or a dataset path identically, so this
+  needs no group/dataset branch of its own.
 
 ## Limitations
 
