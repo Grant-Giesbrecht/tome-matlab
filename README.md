@@ -31,11 +31,27 @@ tested — if you hit an issue on another release, please report it.
 
 ## Installation
 
-Add the `tome/` directory to your MATLAB/Octave path:
+Three ways to get this on your path, in order of how you're using it:
 
-```matlab
-addpath('/path/to/tome-matlab/tome');
-```
+- **MATLAB Add-On (recommended for most MATLAB users).** Download the
+  `.mltbx` from the [latest release](../../releases/latest) (or from
+  File Exchange) and double-click it, or drag it into MATLAB. Installs
+  via MATLAB's Add-On manager and adds itself to the path permanently
+  across sessions.
+- **Editable / development install (either MATLAB or Octave).** Clone
+  the repo and run `install()` from its root:
+  ```matlab
+  install();              % adds tome/ and graf/ for this session
+  install('Save', true);  % ...and persist across future sessions
+  ```
+  This is the `pip install -e` equivalent -- no packaging step, edits
+  to the source take effect immediately. It's also the only option
+  under Octave, which has no Add-On/toolbox concept.
+- **Manual.** Just `addpath` the folders yourself:
+  ```matlab
+  addpath('/path/to/tome-matlab/tome');
+  addpath('/path/to/tome-matlab/graf');   % only if you need GrAF too
+  ```
 
 Octave additionally requires the `hdf5oct` package (MATLAB ships HDF5
 support built in):
@@ -357,3 +373,32 @@ graf has the same three-tier structure, one level up the stack:
       MATLAB_BIN=/path/to/matlab tests/interop/run_graf_interop_tests.sh
   ```
   (`GRAF_PATH` defaults to `../graf/src` next to this repo.)
+
+## Releasing (maintainers)
+
+The `.mltbx` is built entirely from script -- no `.prj` project file, no
+GUI packaging wizard -- via `packaging/build_toolbox.m`, which wraps
+`matlab.addons.toolbox.ToolboxOptions`/`packageToolbox`. That call needs
+MATLAB R2023a+ *to run*; the resulting `.mltbx` still targets
+`MinimumMatlabRelease = 'R2019b'` and installs fine there.
+
+To cut a release:
+
+1. Bump the version in `VERSION` (e.g. `0.2.0`).
+2. Commit, then tag and push: `git tag v0.2.0 && git push origin v0.2.0`.
+3. `.github/workflows/release_toolbox.yml` builds the `.mltbx` and
+   attaches it to the GitHub Release created for that tag (it errors if
+   the tag doesn't match `VERSION`, so the two can't drift).
+4. **First time only:** on File Exchange, "Contribute" a new submission
+   and link it to this GitHub repo. After that, File Exchange picks up
+   each new GitHub Release (and the `.mltbx` asset attached to it)
+   automatically -- no manual re-upload per release.
+
+`packaging/toolbox_identifier.txt` holds a fixed GUID that must **never**
+be regenerated once published: it's how the MATLAB Add-On manager and
+File Exchange recognize a new version as an update to the same install,
+rather than a separate toolbox.
+
+To build locally without releasing (e.g. to sanity-check before
+tagging): `addpath('packaging'); build_toolbox();` writes to
+`packaging/dist/` (git-ignored).
