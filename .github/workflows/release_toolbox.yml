@@ -13,6 +13,8 @@ on:
 jobs:
   package:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create the Release and upload the .mltbx asset
     steps:
       - uses: actions/checkout@v4
 
