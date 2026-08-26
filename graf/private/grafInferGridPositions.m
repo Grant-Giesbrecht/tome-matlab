@@ -43,7 +43,12 @@ function positions = grafInferGridPositions(axHandles, tol)
         key = double(axHandles(i));
         rowStart = rowAssign(i, 1); rowSpan = rowAssign(i, 2) - rowAssign(i, 1);
         colStart = colAssign(i, 1); colSpan = colAssign(i, 2) - colAssign(i, 1);
-        positions(key) = {[rowStart, colStart], [rowSpan, colSpan]};
+        % int32, not double: Python's Axis.position/span are plain ints,
+        % and matplotlib's GridSpec rejects a float row/col count
+        % (np.float64 fails its Integral check) when graf.to_fig() sums
+        % these back up, so a double-typed position/span here would
+        % write a graf file that Python's own to_fig() can't render.
+        positions(key) = {int32([rowStart, colStart]), int32([rowSpan, colSpan])};
     end
 end
 

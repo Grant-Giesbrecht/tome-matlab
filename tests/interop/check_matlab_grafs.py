@@ -53,6 +53,11 @@ def check_kitchen_sink_matlab():
     check(ax1.axis_type == "AXIS_SURFACE", "axis_type")
     sf0 = ax1.surfaces["Sf0"]
     check(np.array(sf0.z_grid).shape == (9, 9), f"z_grid shape {np.array(sf0.z_grid).shape}")
+    # graf.to_fig() needs Axis.position/span as plain ints (its GridSpec
+    # call rejects a float row/col count) -- catches a MATLAB-writer bug
+    # where position/span round-tripped as float64 instead of int.
+    fig = g.to_fig()
+    check(len(fig.axes) == 2, f"to_fig() produced {len(fig.axes)} axes, expected 2")
     print(f"  ok: {tag}_kitchen_sink.graf (via Graf.read_graf)")
 
 
@@ -106,6 +111,8 @@ def check_line_trace():
     tr1 = ax0.traces["Tr1"]
     check(tr1.display_name == "cosine", "tr1 display_name")
     check(tr1.marker_type == "o", "tr1 marker_type")
+    fig = g.to_fig()
+    check(len(fig.axes) == 1, f"to_fig() produced {len(fig.axes)} axes, expected 1")
     print(f"  ok: {tag}_line_trace.graf")
 
 

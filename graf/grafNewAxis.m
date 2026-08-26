@@ -6,8 +6,10 @@ function ax = grafNewAxis()
 %   no low-level HDF5 group-creation API for the resulting empty dict.
     ax = struct();
     ax.axis_type = 'AXIS_LINE2D';
-    ax.position = [0 0];
-    ax.span = [1 1];
+    % int32, not double: Python's Axis.position/span are plain ints, and
+    % graf.to_fig()'s GridSpec(row_max, col_max) rejects a float count.
+    ax.position = int32([0 0]);
+    ax.span = int32([1 1]);
     ax.relative_size = [];
     ax.x_axis = grafNewScale();
     ax.y_axis_L = grafNewScale();

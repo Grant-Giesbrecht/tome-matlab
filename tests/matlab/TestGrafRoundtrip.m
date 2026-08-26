@@ -97,6 +97,7 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
 
             sfax = grafNewAxis();
             sfax.axis_type = 'AXIS_SURFACE';
+            sfax.z_axis.is_valid = true;   % AXIS_SURFACE implies a real 3-D z axis
             sf = grafNewSurface();
             [X, Y] = meshgrid(-2:0.5:2, -2:0.5:2);
             sf.x_grid = X; sf.y_grid = Y; sf.z_grid = X .* exp(-X.^2 - Y.^2);
@@ -182,11 +183,13 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
 
             g = fig2graf(fig);
             testCase.verifyEqual(numel(fieldnames(g.axes)), 3);
-            testCase.verifyEqual(g.axes.Ax0.position, [0 0]);
-            testCase.verifyEqual(g.axes.Ax0.span, [1 1]);
-            testCase.verifyEqual(g.axes.Ax1.position, [0 1]);
-            testCase.verifyEqual(g.axes.Ax2.position, [1 0]);
-            testCase.verifyEqual(g.axes.Ax2.span, [1 2]);
+            % position/span are int32 (not double), matching Python's plain-int
+            % Axis.position/span -- graf.to_fig()'s GridSpec rejects a float count.
+            testCase.verifyEqual(g.axes.Ax0.position, int32([0 0]));
+            testCase.verifyEqual(g.axes.Ax0.span, int32([1 1]));
+            testCase.verifyEqual(g.axes.Ax1.position, int32([0 1]));
+            testCase.verifyEqual(g.axes.Ax2.position, int32([1 0]));
+            testCase.verifyEqual(g.axes.Ax2.span, int32([1 2]));
             testCase.verifyTrue(g.axes.Ax1.traces.Tr0.has_error_bars);
 
             f = testCase.grafFile('subplotgrid');

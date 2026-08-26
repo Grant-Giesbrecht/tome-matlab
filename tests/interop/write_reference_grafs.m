@@ -37,6 +37,7 @@ function write_reference_grafs(outDir)
 
     sfax = grafNewAxis();
     sfax.axis_type = 'AXIS_SURFACE';
+    sfax.z_axis.is_valid = true;   % AXIS_SURFACE implies a real 3-D z axis (see fig2graf)
     sf = grafNewSurface();
     [X, Y] = meshgrid(-2:0.5:2, -2:0.5:2);
     sf.x_grid = X; sf.y_grid = Y; sf.z_grid = X .* exp(-X.^2 - Y.^2);
