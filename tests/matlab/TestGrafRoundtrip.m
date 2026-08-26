@@ -7,7 +7,7 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
     %   axis/trace/surface name, a list-of-dicts history, tuples-as-
     %   arrays for colors, ...).
     %
-    %   grafFromFig/grafToFig are MATLAB-only (see grafFromFig.m for why)
+    %   fig2graf/graf2fig are MATLAB-only (see fig2graf.m for why)
     %   so they are exercised here, not in the Octave suite.
 
     properties
@@ -46,8 +46,8 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             g.axes.Ax0 = grafNewAxis();
             g.axes.Ax0.traces.Tr0 = grafNewTrace();
 
-            testCase.verifyTrue(grafSave(g, f));
-            back = grafLoad(f);
+            testCase.verifyTrue(writegraf(g, f));
+            back = readgraf(f);
             testCase.verifyEqual(back.info.description, 'a blank graf');
             testCase.verifyEqual(back.axes.Ax0.traces.Tr0.line_color, [1 0 0]);
             testCase.verifyGreaterThanOrEqual(numel(back.info.history), 1);
@@ -69,9 +69,11 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             ax.x_axis.tick_label_list = {'0', '5', '10'};
             ax.y_axis_L.label = 'Voltage (V)';
             ax.y_axis_L.val_min = -1; ax.y_axis_L.val_max = 1;
-            ax.y_axis_R = grafNewScale();
+            % grafNewAxis() already gives y_axis_R/z_axis as invalid-by-
+            % default Scale structs (grafNewScale is graf-private); just
+            % flip y_axis_R to valid and fill in its label.
+            ax.y_axis_R.is_valid = true;
             ax.y_axis_R.label = 'Current (A)';
-            ax.z_axis = grafNewScale('Valid', false);
 
             tr = grafNewTrace();
             tr.x_data = linspace(0, 10, 50);
@@ -106,8 +108,8 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             sfax.surfaces.Sf0 = sf;
             g.axes.Ax1 = sfax;
 
-            testCase.verifyTrue(grafSave(g, f));
-            back = grafLoad(f);
+            testCase.verifyTrue(writegraf(g, f));
+            back = readgraf(f);
 
             testCase.verifyEqual(back.supertitle, 'Test Figure');
             testCase.verifyEqual(back.info.conditions.temperature_C, 23.5);
@@ -130,13 +132,13 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             g.axes.Ax0 = grafNewAxis();
             g.axes.Ax0.traces.Tr0 = grafNewTrace();
 
-            grafSave(g, f, 'Action', 'created');
-            back1 = grafLoad(f);
+            writegraf(g, f, 'Action', 'created');
+            back1 = readgraf(f);
             testCase.verifyEqual(numel(back1.info.history), 1);
 
             back1.axes.Ax0.title = 'edited';
-            grafSave(back1, f, 'Action', 'edited title');
-            back2 = grafLoad(f);
+            writegraf(back1, f, 'Action', 'edited title');
+            back2 = readgraf(f);
             testCase.verifyEqual(numel(back2.info.history), 2);
             testCase.verifyEqual(back2.info.history{2}.action, 'edited title');
             % provenance is stamped once and never overwritten
@@ -151,7 +153,7 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             plot(x, cos(x), '--', 'Color', [0 0 1], 'Marker', 'o', 'MarkerSize', 4, 'DisplayName', 'cosine');
             xlabel('Angle (rad)'); ylabel('Value'); title('Trig functions'); grid on;
 
-            g = grafFromFig(fig);
+            g = fig2graf(fig);
             testCase.verifyEqual(fieldnames(g.axes), {'Ax0'});
             ax0 = g.axes.Ax0;
             testCase.verifyEqual(ax0.title, 'Trig functions');
@@ -163,9 +165,9 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             testCase.verifyEqual(ax0.traces.Tr1.marker_type, 'o');
 
             f = testCase.grafFile('linefig');
-            grafSave(g, f);
-            back = grafLoad(f);
-            fig2 = grafToFig(back, 'Title', 'Reconstructed');
+            writegraf(g, f);
+            back = readgraf(f);
+            fig2 = graf2fig(back, 'Title', 'Reconstructed');
             axs2 = findobj(fig2, 'Type', 'axes');
             testCase.verifyEqual(numel(axs2), 1);
             lines2 = findobj(axs2(1), 'Type', 'line');
@@ -178,7 +180,7 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             subplot(2, 2, 2); errorbar(1:5, [2 4 3 5 4], [0.5 0.3 0.4 0.2 0.3]); title('Errorbar');
             subplot(2, 2, [3 4]); plot(1:10, 1:10); title('Wide');
 
-            g = grafFromFig(fig);
+            g = fig2graf(fig);
             testCase.verifyEqual(numel(fieldnames(g.axes)), 3);
             testCase.verifyEqual(g.axes.Ax0.position, [0 0]);
             testCase.verifyEqual(g.axes.Ax0.span, [1 1]);
@@ -188,9 +190,9 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             testCase.verifyTrue(g.axes.Ax1.traces.Tr0.has_error_bars);
 
             f = testCase.grafFile('subplotgrid');
-            grafSave(g, f);
-            back = grafLoad(f);
-            fig2 = grafToFig(back);
+            writegraf(g, f);
+            back = readgraf(f);
+            fig2 = graf2fig(back);
             axs2 = findobj(fig2, 'Type', 'axes');
             testCase.verifyEqual(numel(axs2), 3);
         end
@@ -200,16 +202,16 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             yyaxis left; plot(1:10, 1:10, '-'); ylabel('Left');
             yyaxis right; plot(1:10, (1:10) * 100, '--'); ylabel('Right');
 
-            g = grafFromFig(fig);
+            g = fig2graf(fig);
             ax0 = g.axes.Ax0;
             testCase.verifyTrue(ax0.y_axis_R.is_valid);
             testCase.verifyFalse(ax0.traces.Tr0.use_yaxis_R);
             testCase.verifyTrue(ax0.traces.Tr1.use_yaxis_R);
 
             f = testCase.grafFile('dualaxis');
-            grafSave(g, f);
-            back = grafLoad(f);
-            fig2 = grafToFig(back);
+            writegraf(g, f);
+            back = readgraf(f);
+            fig2 = graf2fig(back);
             testCase.verifyEqual(numel(findobj(fig2, 'Type', 'axes')), 1);
         end
 
@@ -221,7 +223,7 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             colorbar;
             title('Surf');
 
-            g = grafFromFig(fig);
+            g = fig2graf(fig);
             ax0 = g.axes.Ax0;
             testCase.verifyEqual(ax0.axis_type, 'AXIS_SURFACE');
             sfNames = fieldnames(ax0.surfaces);
@@ -232,15 +234,40 @@ classdef TestGrafRoundtrip < matlab.unittest.TestCase
             testCase.verifyTrue(sf0.has_colorbar);
 
             f = testCase.grafFile('surffig');
-            grafSave(g, f);
-            back = grafLoad(f);
-            fig2 = grafToFig(back);
+            writegraf(g, f);
+            back = readgraf(f);
+            fig2 = graf2fig(back);
             testCase.verifyEqual(numel(findobj(fig2, 'Type', 'axes')), 1);
         end
 
         function readMissingFileReturnsEmpty(testCase)
-            back = grafLoad(fullfile(testCase.WorkDir, 'does_not_exist.graf'));
+            back = readgraf(fullfile(testCase.WorkDir, 'does_not_exist.graf'));
             testCase.verifyEmpty(back);
+        end
+
+        function oneStepSaveLoadRoundtrip(testCase)
+            fig = figure('Visible', 'off');
+            x = linspace(0, 2*pi, 100);
+            plot(x, sin(x), '-', 'Color', [1 0 0], 'LineWidth', 2, 'DisplayName', 'sine');
+            title('One-step');
+
+            f = testCase.grafFile('onestep');
+            testCase.verifyTrue(savegraf(fig, f));
+
+            fig2 = loadgraf(f, 'Title', 'Reconstructed');
+            axs2 = findobj(fig2, 'Type', 'axes');
+            testCase.verifyEqual(numel(axs2), 1);
+            testCase.verifyEqual(axs2(1).Title.String, 'One-step');
+
+            % savegraf also accepts a .fig file path, and defaults to gcf.
+            figFile = fullfile(testCase.WorkDir, 'onestep.fig');
+            savefig(fig, figFile);
+            f2 = testCase.grafFile('onestep_fromfigfile');
+            testCase.verifyTrue(savegraf(figFile, f2));
+
+            figure(fig);   % make fig current for the gcf-default form
+            f3 = testCase.grafFile('onestep_gcf');
+            testCase.verifyTrue(savegraf(f3));
         end
     end
 end

@@ -3,7 +3,7 @@ function info = grafNewMetaInfo(varargin)
 %   info = grafNewMetaInfo()
 %   info = grafNewMetaInfo('Description', '...', 'Conditions', struct(...))
 %
-%   provenance/history start empty; grafSave stamps them (see
+%   provenance/history start empty; writegraf stamps them (see
 %   grafStampProvenance.m), matching Python's write_graf choke point.
     p = inputParser();
     p.addParameter('Description', '');

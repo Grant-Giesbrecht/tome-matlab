@@ -1,7 +1,7 @@
 function run_graf_octave_tests()
 %RUN_GRAF_OCTAVE_TESTS Assertion-based tests for the graf serialization
-%   layer (grafNew*/grafSave/grafLoad) under Octave. grafFromFig/grafToFig
-%   are MATLAB-only (see grafFromFig.m) so are not exercised here.
+%   layer (grafNew*/writegraf/readgraf) under Octave. fig2graf/graf2fig
+%   are MATLAB-only (see fig2graf.m) so are not exercised here.
 %
 %   Run with: octave --no-gui -eval "run_graf_octave_tests"
 
@@ -57,8 +57,8 @@ function blankGrafRoundtrip(workDir)
     g.axes.Ax0 = grafNewAxis();
     g.axes.Ax0.traces.Tr0 = grafNewTrace();
 
-    assert(grafSave(g, f));
-    back = grafLoad(f);
+    assert(writegraf(g, f));
+    back = readgraf(f);
     assert(strcmp(back.info.description, 'a blank graf'));
     assert(isequal(back.axes.Ax0.traces.Tr0.line_color, [1 0 0]));
     assert(numel(back.info.history) >= 1);
@@ -100,8 +100,8 @@ function fullyPopulatedGrafRoundtrip(workDir)
     sfax.surfaces.Sf0 = sf;
     g.axes.Ax1 = sfax;
 
-    assert(grafSave(g, f));
-    back = grafLoad(f);
+    assert(writegraf(g, f));
+    back = readgraf(f);
 
     assert(strcmp(back.supertitle, 'Test Figure'));
     assert(back.info.conditions.temperature_C == 23.5);
@@ -122,19 +122,19 @@ function multipleSavesAppendHistory(workDir)
     g.axes.Ax0 = grafNewAxis();
     g.axes.Ax0.traces.Tr0 = grafNewTrace();
 
-    grafSave(g, f, 'Action', 'created');
-    back1 = grafLoad(f);
+    writegraf(g, f, 'Action', 'created');
+    back1 = readgraf(f);
     assert(numel(back1.info.history) == 1);
 
     back1.axes.Ax0.title = 'edited';
-    grafSave(back1, f, 'Action', 'edited title');
-    back2 = grafLoad(f);
+    writegraf(back1, f, 'Action', 'edited title');
+    back2 = readgraf(f);
     assert(numel(back2.info.history) == 2);
     assert(strcmp(back2.info.history{2}.action, 'edited title'));
     assert(strcmp(back2.info.provenance.created_utc, back1.info.provenance.created_utc));
 end
 
 function readMissingFileReturnsEmpty(workDir)
-    back = grafLoad(fullfile(workDir, 'does_not_exist.graf'));
+    back = readgraf(fullfile(workDir, 'does_not_exist.graf'));
     assert(isempty(back));
 end

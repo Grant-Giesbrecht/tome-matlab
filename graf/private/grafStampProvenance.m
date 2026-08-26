@@ -1,7 +1,7 @@
 function g = grafStampProvenance(g, varargin)
 %GRAFSTAMPPROVENANCE Populate info.provenance (once) and append a
 %   info.history entry, mirroring Python's Graf._stamp_provenance /
-%   write_graf choke point. Called by grafSave on every save.
+%   write_graf choke point. Called by writegraf on every save.
     p = inputParser();
     p.addParameter('SourceApp', '');
     p.addParameter('Action', '');

@@ -1,9 +1,9 @@
-function fig = grafToFig(g, varargin)
-%GRAFTOFIG Reconstruct a MATLAB figure from a GrAF struct.
+function fig = graf2fig(g, varargin)
+%GRAF2FIG Reconstruct a MATLAB figure from a GrAF struct.
 %
-%   fig = grafToFig(g)
-%   fig = grafToFig(g, 'Scale', 1.5)
-%   fig = grafToFig(g, 'Title', 'My Window')
+%   fig = graf2fig(g)
+%   fig = graf2fig(g, 'Scale', 1.5)
+%   fig = graf2fig(g, 'Title', 'My Window')
 %
 %   Options (name-value pairs):
 %     'Scale'  - multiplicative size scale factor (default 1.0)
@@ -11,7 +11,8 @@ function fig = grafToFig(g, varargin)
 %
 %   Returns the MATLAB figure handle.
 %
-%   MATLAB-only — see grafFromFig.m for why.
+%   MATLAB-only — see fig2graf.m for why. See also loadgraf, which goes
+%   straight from a .graf file to a figure in one step.
     p = inputParser();
     p.addParameter('Scale', 1.0);
     p.addParameter('Title', '');

@@ -15,7 +15,7 @@ function check_python_grafs(dataDir)
 end
 
 function checkLineTrace(f)
-    g = grafLoad(f);
+    g = readgraf(f);
     assert(strcmp(g.info.description, 'py_line_trace reference'));
     ax0 = g.axes.Ax0;
     assert(strcmp(ax0.title, 'Trig functions'));
@@ -26,8 +26,8 @@ function checkLineTrace(f)
     assert(strcmp(tr0.display_name, 'sine'));
     % Python's line_color is a tuple, which tome's writer JSON-encodes
     % (no dedicated tuple type); jsondecode gives a column vector back in
-    % MATLAB, vs. the row vectors grafNewTrace/grafFromFig use natively.
-    % Harmless — grafToFig already flattens defensively before use.
+    % MATLAB, vs. the row vectors grafNewTrace/fig2graf use natively.
+    % Harmless — graf2fig already flattens defensively before use.
     assert(isequal(tr0.line_color(:)', [1 0 0]));
     assert(numel(tr0.x_data) == 100);
     tr1 = ax0.traces.Tr1;
@@ -36,16 +36,16 @@ function checkLineTrace(f)
     fprintf('  ok: py_line_trace.graf\n');
 
     % Must also reconstruct as a figure without erroring (MATLAB only —
-    % grafToFig is not available/meaningful under Octave).
+    % graf2fig is not available/meaningful under Octave).
     if ~exist('OCTAVE_VERSION', 'builtin')
-        fig = grafToFig(g);
+        fig = graf2fig(g);
         assert(numel(findobj(fig, 'Type', 'axes')) == 1);
         close(fig);
     end
 end
 
 function checkSubplotGrid(f)
-    g = grafLoad(f);
+    g = readgraf(f);
     assert(strcmp(g.info.description, 'py_subplot_grid reference'));
     assert(numel(fieldnames(g.axes)) == 3);
     assert(isequal(g.axes.Ax0.position, [0 0]));
@@ -57,14 +57,14 @@ function checkSubplotGrid(f)
     fprintf('  ok: py_subplot_grid.graf\n');
 
     if ~exist('OCTAVE_VERSION', 'builtin')
-        fig = grafToFig(g);
+        fig = graf2fig(g);
         assert(numel(findobj(fig, 'Type', 'axes')) == 3);
         close(fig);
     end
 end
 
 function checkSurface(f)
-    g = grafLoad(f);
+    g = readgraf(f);
     assert(strcmp(g.info.description, 'py_surface reference'));
     ax0 = g.axes.Ax0;
     assert(strcmp(ax0.axis_type, 'AXIS_IMAGE'));
@@ -78,7 +78,7 @@ function checkSurface(f)
     fprintf('  ok: py_surface.graf\n');
 
     if ~exist('OCTAVE_VERSION', 'builtin')
-        fig = grafToFig(g);
+        fig = graf2fig(g);
         assert(numel(findobj(fig, 'Type', 'axes')) == 1);
         close(fig);
     end

@@ -45,7 +45,7 @@ matlab_available() { command -v "$MATLAB_BIN" >/dev/null 2>&1 || [ -x "$MATLAB_B
 run_step "python: generate reference grafs" \
     "$PYTHON_BIN" "$HERE/gen_reference_grafs.py" "$GRAF_PATH" "$DATA_DIR"
 
-# 2. MATLAB / Octave read them back via grafLoad and self-check.
+# 2. MATLAB / Octave read them back via readgraf and self-check.
 if matlab_available; then
     run_step "matlab: read python-written grafs" \
         "$MATLAB_BIN" -batch "addpath('$REPO_ROOT/tome'); addpath('$REPO_ROOT/graf'); addpath('$HERE'); check_python_grafs('$DATA_DIR')"
@@ -60,7 +60,7 @@ else
     echo "skipping Octave checks: 'octave' not found"
 fi
 
-# 3. MATLAB / Octave write reference .graf files via grafSave.
+# 3. MATLAB / Octave write reference .graf files via writegraf.
 if matlab_available; then
     run_step "matlab: write reference grafs" \
         "$MATLAB_BIN" -batch "addpath('$REPO_ROOT/tome'); addpath('$REPO_ROOT/graf'); addpath('$HERE'); write_reference_grafs('$DATA_DIR')"

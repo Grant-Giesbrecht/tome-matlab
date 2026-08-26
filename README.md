@@ -212,50 +212,71 @@ tr.y_data = sin(tr.x_data);
 ax.traces.Tr0 = tr;
 g.axes.Ax0 = ax;
 
-grafSave(g, 'demo.graf');
-back = grafLoad('demo.graf');
+writegraf(g, 'demo.graf');
+back = readgraf('demo.graf');
 ```
 
-MATLAB additionally gets figure↔struct translation:
+MATLAB additionally gets figure↔struct translation, and one-step
+figure↔file convenience functions mirroring Python's `save_graf`/
+`load_graf`:
 
 ```matlab
 fig = figure; plot(1:10, sin(1:10));
-g = grafFromFig(fig);          % extract a GrAF struct from a figure
-grafSave(g, 'demo.graf');
-fig2 = grafToFig(grafLoad('demo.graf'));   % and reconstruct one
+
+g = fig2graf(fig);             % extract a GrAF struct from a figure
+writegraf(g, 'demo.graf');
+fig2 = graf2fig(readgraf('demo.graf'));   % and reconstruct one
+
+% ...or in one step:
+savegraf(fig, 'demo.graf');    % figure -> struct -> file
+fig3 = loadgraf('demo.graf');  % file -> struct -> figure
 ```
 
 ### API
 
-- `grafNew`, `grafNewAxis`, `grafNewTrace`, `grafNewSurface`,
-  `grafNewScale`, `grafNewFont`, `grafNewGraphStyle`, `grafNewMetaInfo`
-  — default-populated structs matching each Python class's own
-  defaults (`graf.base.Graf()`, `Axis()`, `Trace()`, ...). Cross-platform.
-- `grafSave(g, filename, ...)` / `grafLoad(filename)` — the tome-backed
-  I/O, directly analogous to `tomeWrite`/`tomeRead`. Cross-platform.
-  `grafSave` stamps `g.info.provenance` (once) and appends a
-  `g.info.history` entry on every call, mirroring Python's
-  `Graf.write_graf` choke point.
-- `grafFromFig(fig)` / `grafToFig(g, ...)` — figure↔struct translation.
+Naming mirrors the Python `graf` package: `write_graf`/`read_graf` move
+a `Graf` object to/from a file, `save_graf`/`load_graf` move a
+matplotlib figure to/from a file in one step. The MATLAB/Octave
+equivalents use `2`/`To`/`From` for direction, per MATLAB convention.
+
+- `grafNew`, `grafNewAxis`, `grafNewTrace`, `grafNewSurface` —
+  default-populated structs matching each Python class's own defaults
+  (`graf.base.Graf()`, `Axis()`, `Trace()`, `Surface()`). Cross-platform.
+  (`grafNewScale`/`grafNewFont`/`grafNewGraphStyle`/`grafNewMetaInfo`
+  build the corresponding nested sub-structs but are graf-internal —
+  `grafNewAxis`/`grafNew` already populate them with working defaults,
+  so there's normally no need to call them directly.)
+- `writegraf(g, filename, ...)` / `readgraf(filename)` — the tome-backed
+  I/O, directly analogous to `tomeWrite`/`tomeRead` (mirrors Python's
+  `write_graf`/`read_graf`). Cross-platform. `writegraf` stamps
+  `g.info.provenance` (once) and appends a `g.info.history` entry on
+  every call, mirroring Python's `Graf.write_graf` choke point.
+- `fig2graf(fig)` / `graf2fig(g, ...)` — figure↔struct translation.
   **MATLAB-only** (see below). Supports 2-D/3-D line plots, scatter,
   error bars, dual y-axes (`yyaxis`), subplot grids with arbitrary
   spans (inferred from on-figure bounding boxes, matching how Python's
   `Graf.mimic`/`to_fig` size their `GridSpec`), and surface/image plots
   (`surf`/`pcolor`/`imagesc`).
+- `savegraf(fig, filename, ...)` / `loadgraf(filename, ...)` — one-step
+  figure↔file convenience (mirrors Python's `save_graf`/`load_graf`):
+  `savegraf` = `fig2graf` + `writegraf`, `loadgraf` = `readgraf` +
+  `graf2fig`. `savegraf` also accepts a `.fig` file path in place of a
+  handle (via `openfig`), or no figure argument at all (defaults to
+  `gcf`). **MATLAB-only**, for the same reason as `fig2graf`/`graf2fig`.
 
 ### Design notes / limitations
 
-- **`grafFromFig`/`grafToFig` are MATLAB-only.** Octave's graphics
-  handles are plain numeric HG1-style handles with no dot-notation
-  property access, no `yyaxis`, and a different
-  Legend/ColorBar/ErrorBar class hierarchy than MATLAB's HG2 objects —
-  porting the figure-introspection layer would be a largely separate,
-  substantial rewrite orthogonal to testing tome/graf serialization,
-  which is what this exercise is actually for. `grafSave`/`grafLoad`
-  work identically on both platforms.
+- **`fig2graf`/`graf2fig` (and therefore `savegraf`/`loadgraf`) are
+  MATLAB-only.** Octave's graphics handles are plain numeric HG1-style
+  handles with no dot-notation property access, no `yyaxis`, and a
+  different Legend/ColorBar/ErrorBar class hierarchy than MATLAB's HG2
+  objects — porting the figure-introspection layer would be a largely
+  separate, substantial rewrite orthogonal to testing tome/graf
+  serialization, which is what this exercise is actually for.
+  `writegraf`/`readgraf` work identically on both platforms.
 - **A yyaxis trace's side is inferred by color-matching**, since a
   MATLAB `Line` object carries no direct back-reference to which
-  `yyaxis` side created it: `grafFromFig` compares each line's color
+  `yyaxis` side created it: `fig2graf` compares each line's color
   against `ax.YAxis(2).Color`. An unusual custom color on a right-side
   trace can defeat this heuristic and misclassify it as left-side.
 - **Octave cannot save an axis with zero traces AND zero surfaces**
@@ -264,9 +285,9 @@ fig2 = grafToFig(grafLoad('demo.graf'));   % and reconstruct one
   surface-only axis always has one of its two dict fields empty — which
   runs straight into tome's "Octave can't write an empty dict" limit
   (see above). Since this is the *common* case for GrAF specifically
-  (not an edge case), `grafSave` handles it explicitly rather than just
+  (not an edge case), `writegraf` handles it explicitly rather than just
   erroring: under Octave it omits the empty field with a `warning()`
-  instead of writing it, and `grafLoad` fills any omitted
+  instead of writing it, and `readgraf` fills any omitted
   `axes`/`traces`/`surfaces` field back in as empty on read — so
   round-tripping through this library (either platform, either
   direction) is always fully robust. The one real consequence: an
@@ -283,8 +304,8 @@ fig2 = grafToFig(grafLoad('demo.graf'));   % and reconstruct one
   vector, not a row.** `line_color`/`marker_color`/etc. are Python
   tuples, which tome's writer has no dedicated type for and falls back
   to JSON-encoding; `jsondecode` hands a JSON array back as a column
-  vector in MATLAB, unlike the row vectors `grafNew*`/`grafFromFig` use
-  natively. Harmless — `grafToFig` already flattens defensively
+  vector in MATLAB, unlike the row vectors `grafNew*`/`fig2graf` use
+  natively. Harmless — `graf2fig` already flattens defensively
   (`(:)'`) before using any color field — but worth knowing if you
   compare a loaded color field against a literal `[r g b]`.
 - Everything under tome's own Limitations section above (struct field
@@ -321,11 +342,11 @@ fig2 = grafToFig(grafLoad('demo.graf'));   % and reconstruct one
 graf has the same three-tier structure, one level up the stack:
 
 - `tests/matlab/TestGrafRoundtrip.m` — `matlab.unittest` suite covering
-  `grafNew*`/`grafSave`/`grafLoad`, plus `grafFromFig`/`grafToFig` on
-  real figures (line plots, subplot grids with spans, dual y-axes,
-  surfaces) since those are MATLAB-only.
+  `grafNew*`/`writegraf`/`readgraf`, plus `fig2graf`/`graf2fig` and the
+  one-step `savegraf`/`loadgraf` on real figures (line plots, subplot
+  grids with spans, dual y-axes, surfaces) since those are MATLAB-only.
 - `tests/octave/run_graf_octave_tests.m` — the serialization-layer
-  cases only (`grafNew*`/`grafSave`/`grafLoad`), matching the
+  cases only (`grafNew*`/`writegraf`/`readgraf`), matching the
   MATLAB-only scope of the figure-translation functions.
 - `tests/interop/run_graf_interop_tests.sh` — the same 4-leg matrix as
   tome's, but against the real Python `graf` package (`Graf().mimic()`

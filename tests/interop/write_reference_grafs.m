@@ -2,8 +2,8 @@ function write_reference_grafs(outDir)
 %WRITE_REFERENCE_GRAFS Write reference .graf files from MATLAB/Octave for
 %   the Python side to read back with the real graf package and verify
 %   (see check_matlab_grafs.py). Works under both MATLAB and Octave;
-%   MATLAB additionally exercises grafFromFig (Octave has no equivalent
-%   here, see grafFromFig.m).
+%   MATLAB additionally exercises fig2graf (Octave has no equivalent
+%   here, see fig2graf.m).
     if exist('OCTAVE_VERSION', 'builtin')
         pkg load hdf5oct;
     end
@@ -44,11 +44,11 @@ function write_reference_grafs(outDir)
     sfax.surfaces.Sf0 = sf;
     g.axes.Ax1 = sfax;
 
-    ok1 = grafSave(g, fullfile(outDir, [tagPrefix '_kitchen_sink.graf']));
+    ok1 = writegraf(g, fullfile(outDir, [tagPrefix '_kitchen_sink.graf']));
 
     ok2 = true;
     if ~exist('OCTAVE_VERSION', 'builtin')
-        % --- A real MATLAB figure, extracted via grafFromFig -----------------
+        % --- A real MATLAB figure, extracted via fig2graf -----------------
         fig = figure('Visible', 'off');
         x = linspace(0, 2 * pi, 100);
         plot(x, sin(x), '-', 'Color', [1 0 0], 'LineWidth', 2, 'DisplayName', 'sine');
@@ -56,9 +56,9 @@ function write_reference_grafs(outDir)
         plot(x, cos(x), '--', 'Color', [0 0 1], 'Marker', 'o', 'DisplayName', 'cosine');
         xlabel('Angle (rad)'); ylabel('Value'); title('Trig functions'); grid on;
 
-        gfig = grafFromFig(fig);
+        gfig = fig2graf(fig);
         gfig.info.description = [tagPrefix ' line trace reference'];
-        ok2 = grafSave(gfig, fullfile(outDir, [tagPrefix '_line_trace.graf']));
+        ok2 = writegraf(gfig, fullfile(outDir, [tagPrefix '_line_trace.graf']));
         close(fig);
     end
 

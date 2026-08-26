@@ -8,7 +8,7 @@ Packable.unpack() chain against a MATLAB-authored file.
 
 Octave-authored files are checked via stardust.tome.tome_to_dict
 directly instead: Octave cannot write an empty HDF5 group (no low-level
-API in hdf5oct), so grafSave omits an axis's empty 'traces' or
+API in hdf5oct), so writegraf omits an axis's empty 'traces' or
 'surfaces' dict rather than erroring (see
 graf/private/grafStripEmptyDictsForOctave.m). That is faithfully
 readable tome data — which is what's actually being tested here — but

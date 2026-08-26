@@ -1,14 +1,17 @@
-function g = grafLoad(filename)
-%GRAFLOAD Read a .graf (tome/HDF5) file into a MATLAB struct.
+function g = readgraf(filename)
+%READGRAF Read a .graf (tome/HDF5) file into a MATLAB struct.
 %
-%   g = grafLoad(filename)
+%   g = readgraf(filename)
 %
 %   Returns [] if the file cannot be read (see tomeRead). Fills in
 %   sensible defaults for any top-level/axis-level field a file happens
 %   to be missing — including 'axes'/'traces'/'surfaces' dicts that were
-%   omitted by grafSave under Octave (see
-%   grafStripEmptyDictsForOctave.m) — so a load is always robust
+%   omitted by writegraf under Octave (see
+%   grafStripEmptyDictsForOctave.m) — so a read is always robust
 %   regardless of which platform wrote the file.
+%
+%   See also loadgraf, which goes straight from a .graf file to a
+%   MATLAB figure in one step (mirrors Python's load_graf).
     grafEnsureTomeOnPath();
 
     g = tomeRead(filename);
