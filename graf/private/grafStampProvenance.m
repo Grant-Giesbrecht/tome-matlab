@@ -22,8 +22,9 @@ function g = grafStampProvenance(g, varargin)
         prov = struct();
         prov.provenance_schema = '1.0';
         prov.created_utc = now;
-        prov.created_by = sprintf('GrAF 0.0.0 (%s)', graf_source_runtime());
-        prov.graf_version = '0.0.0';
+        prov.created_by = sprintf('GrAF 0.1.0 (%s)', graf_source_runtime());
+        prov.graf_format_version = '1.0';
+        prov.graf_library_version = '0.1.0';
         prov.source_language = g.info.source_language;
         prov.creating_script = '';
         if ~isempty(sourceApp)
@@ -60,7 +61,7 @@ function g = grafStampProvenance(g, varargin)
     else
         entry.action = action;
     end
-    entry.by = sprintf('GrAF 0.0.0 (%s)', graf_source_runtime());
+    entry.by = sprintf('GrAF 0.1.0 (%s)', graf_source_runtime());
     entry.content_sha256 = contentHash;
     if ~isempty(sourceApp)
         entry.app = sourceApp;

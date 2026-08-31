@@ -128,6 +128,10 @@ function grafRenderLineAxis(ax_h, ax_s)
         end
         grafApplyScale(ax_h, 'z', ax_s.z_axis);
     end
+
+    if isfield(ax_s, 'legend_on') && ax_s.legend_on
+        legend(ax_h, 'Location', grafLegendLocationFromGraf(ax_s.legend_location));
+    end
 end
 
 function grafDrawLine2D(ax_h, tr)

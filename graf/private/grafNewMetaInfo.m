@@ -11,10 +11,10 @@ function info = grafNewMetaInfo(varargin)
     p.parse(varargin{:});
 
     info = struct();
-    info.version = '0.0.0';
+    info.version = '1.0';            % format version (GRAF_FORMAT_VERSION)
     info.source_language = 'MATLAB';
     info.source_library = 'GrAF';
-    info.source_version = '0.0.0';
+    info.source_version = '0.1.0';   % writing library's version
     info.description = p.Results.Description;
     info.conditions = p.Results.Conditions;
     info.provenance = struct();

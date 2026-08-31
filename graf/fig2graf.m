@@ -75,6 +75,15 @@ function ax_s = grafExtractAxis(ax_h, posSpan)
     ax_s.title = char(ax_h.Title.String);
     ax_s.grid_on = strcmp(ax_h.XGrid, 'on');
 
+    lgd = get(ax_h, 'Legend');
+    if ~isempty(lgd) && isvalid(lgd)
+        ax_s.legend_on = true;
+        ax_s.legend_location = grafLegendLocationToGraf(lgd.Location);
+    else
+        ax_s.legend_on = false;
+        ax_s.legend_location = 'best';
+    end
+
     hasSurface = ~isempty(findobj(ax_h, 'Type', 'surface')) || ~isempty(findobj(ax_h, 'Type', 'image'));
 
     if hasSurface

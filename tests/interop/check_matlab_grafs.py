@@ -11,10 +11,15 @@ directly instead: Octave cannot write an empty HDF5 group (no low-level
 API in hdf5oct), so writegraf omits an axis's empty 'traces' or
 'surfaces' dict rather than erroring (see
 graf/private/grafStripEmptyDictsForOctave.m). That is faithfully
-readable tome data — which is what's actually being tested here — but
-graf's own Packable.unpack() does not tolerate a missing dict_manifest
-key and raises for that axis. This is verified explicitly below as a
-known, documented, Octave-only limitation, not silently worked around.
+readable tome data — which is what's actually being tested here.
+
+As of stardust-tools 0.2.0, graf's own Graf.read_graf() also tolerates
+the missing dict: a missing field takes its default rather than
+aborting the load (see graf's CHANGELOG.md, "Silent partial loads are
+now impossible"), so a raw Graf.read_graf() call now succeeds on these
+files too, with the omitted dict defaulting to empty and
+Graf.unpack_report recording what defaulted. This is verified
+explicitly below.
 
 Usage: check_matlab_grafs.py <graf_src_path> <stardust_src_path> <data_dir> <tag>
 where <tag> is 'matlab' or 'octave'.
@@ -83,18 +88,21 @@ def check_kitchen_sink_octave():
     check(np.array(sf0["z_grid"]).shape == (9, 9), f"z_grid shape {np.array(sf0['z_grid']).shape}")
     print(f"  ok: {tag}_kitchen_sink.graf (via tome_to_dict, since Ax0.surfaces is missing)")
 
-    # Now confirm the *documented* limitation actually reproduces: a raw
-    # Graf.read_graf() call must fail on this same file, specifically
-    # because of the missing dict_manifest key. If graf's Packable.unpack()
-    # is ever hardened to tolerate this, this assertion (not the round
-    # trip itself) is what should start failing.
+    # A raw Graf.read_graf() call now also tolerates the missing dict
+    # (stardust-tools >= 0.2.0): the field defaults to empty rather than
+    # aborting the load, and unpack_report names what defaulted.
     from graf.base import Graf
     g = Graf()
     g.read_graf(f"{data_dir}/{tag}_kitchen_sink.graf")
-    check("Ax0" not in g.axes, "expected graf's raw Graf.read_graf() to still choke on the "
-                                "Octave-omitted empty dict; if this now succeeds, graf.base.Packable.unpack "
-                                "was hardened and check_matlab_grafs.py should be simplified")
-    print(f"  ok: confirmed the documented Graf.read_graf() limitation still reproduces on this file")
+    check("Ax0" in g.axes, "expected Graf.read_graf() to tolerate the Octave-omitted "
+                            "empty dict and still load Ax0")
+    check(g.axes["Ax0"].surfaces == {}, "Ax0.surfaces should default to empty")
+    report = getattr(g, "unpack_report", None)
+    if report is not None:
+        missing = getattr(report, "missing", report)
+        check(any("surfaces" in str(m) for m in missing),
+              "unpack_report should record axes.Ax0.surfaces as defaulted")
+    print(f"  ok: confirmed Graf.read_graf() tolerates the Octave-omitted empty dict")
 
 
 def check_line_trace():

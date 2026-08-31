@@ -5,4 +5,5 @@ function gs = grafNewGraphStyle()
     gs.title_font = grafNewFont();
     gs.graph_font = grafNewFont();
     gs.label_font = grafNewFont();
+    gs.legend_font = grafNewFont();
 end
